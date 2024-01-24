@@ -1,0 +1,13 @@
+{
+  "name": "tages",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "waseeen",
+  "license": "ISC"
+}
