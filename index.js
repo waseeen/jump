@@ -7,11 +7,11 @@ let chunkCounter = 0;
 
 const settings = {
   dir: "temp",
-  filename: "exmpl", //input file for sorting
+  filename: "example", //input file for sorting
   outfile: "sorted",
   outdir: "out",
-  maxFileMb: 0.01,
-  maxFilesInDir: 10, //not more than 1000, otherwise readdirSync will not be avaliable to get them
+  maxFileMb: 200,
+  maxFilesInDir: 100, //not more than 1000, otherwise readdirSync will not be avaliable to get them
 };
 
 //paste here your compareFunction
