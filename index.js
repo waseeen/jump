@@ -7,24 +7,51 @@ let chunkCounter = 0;
 
 const settings = {
   dir: "temp",
-  filename: "example", //input file for sorting
+  filename: "ex", //input file for sorting
   outfile: "sorted",
   outdir: "out",
-  maxFileMb: 200,
-  maxFilesInDir: 100, //not more than 1000, otherwise readdirSync will not be avaliable to get them
+  maxFileMb: 80, //max splitted file size, if --max-old-space-size=500, keep it less than 80 to avoid heap out of memory
+  maxFilesInDir: 500, //not more than 1000, otherwise readdirSync will not be avaliable to get them
 };
 
-//paste here your compareFunction
+//paste here your sorting algorithm/compareFunction
 function compare(a, b) {
   if (+a - +b > 0) return 1;
   return -1;
+}
+
+async function splitFile(path) {
+  const rl = readline.createInterface({
+    input: fs.createReadStream(path),
+  });
+  for await (const line of rl) {
+    fs.appendFileSync(
+      `${settings.dir}/chunk${chunkCounter}/${fileCounter}`,
+      line + "\n",
+      (err) => {
+        console.log(err);
+      }
+    );
+    if (
+      fs.statSync(`${settings.dir}/chunk${chunkCounter}/${fileCounter}`).size >
+      settings.maxFileMb * 1024 * 1024
+    ) {
+      fileCounter++;
+      if (fileCounter % settings.maxFilesInDir == 0) {
+        chunkCounter++;
+        if (!fs.existsSync(`${settings.dir}/chunk${chunkCounter}`)) {
+          fs.mkdirSync(`${settings.dir}/chunk${chunkCounter}`);
+        }
+      }
+    }
+  }
+  rl.close();
 }
 
 const updatePaths = (dir) => {
   const paths = [];
   readdirSync(dir).forEach((d) => {
     readdirSync(`${dir}/${d}`).forEach((file) => {
-      sortFile(`${dir}/${d}/${file}`);
       paths.push(`${dir}/${d}/${file}`);
     });
   });
@@ -90,6 +117,10 @@ function sortFile(filePath) {
   fs.writeFileSync(filePath, lines.join("\n"));
 }
 
+const start = new Date();
+console.log("Started at ");
+console.log(start);
+
 if (!fs.existsSync(settings.dir)) {
   fs.mkdirSync(settings.dir);
 }
@@ -100,33 +131,10 @@ if (!fs.existsSync(`${settings.dir}/chunk${chunkCounter}`)) {
   fs.mkdirSync(`${settings.dir}/chunk${chunkCounter}`);
 }
 
-const rl = readline.createInterface({
-  input: fs.createReadStream(settings.filename),
-});
-for await (const line of rl) {
-  fs.appendFileSync(
-    `${settings.dir}/chunk${chunkCounter}/${fileCounter}`,
-    line + "\n",
-    (err) => {
-      console.log(err);
-    }
-  );
-  if (
-    fs.statSync(`${settings.dir}/chunk${chunkCounter}/${fileCounter}`).size >
-    settings.maxFileMb * 1024 * 1024
-  ) {
-    fileCounter++;
-    if (fileCounter % settings.maxFilesInDir == 0) {
-      chunkCounter++;
-      if (!fs.existsSync(`${settings.dir}/chunk${chunkCounter}`)) {
-        fs.mkdirSync(`${settings.dir}/chunk${chunkCounter}`);
-      }
-    }
-  }
-}
-rl.close();
+await splitFile(settings.filename);
 
 var paths = updatePaths(settings.dir);
+paths.forEach((p) => sortFile(p));
 
 while (paths.length > 1) {
   await externalMerge(paths[0], paths[1], `${path.parse(paths[1]).dir}/`);
@@ -139,3 +147,10 @@ fs.renameSync(paths[0], `${settings.outdir}/${settings.outfile}`);
 fs.rmSync(settings.dir, { recursive: true, force: true });
 
 console.log(`${settings.filename} was successfuly sorted!`);
+
+const end = new Date();
+console.log("Finished at");
+console.log(end);
+
+console.log("Total elapsed time:");
+console.log(end - start);
