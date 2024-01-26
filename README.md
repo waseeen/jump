@@ -22,5 +22,7 @@ node --max-old-space-size=500
 ```
 
 232MB file (5MB splits) was sorted in 01h01m59s
+
 232MB file (80MB splits) was sorted in 00h26m49s
+
 3.48GB file (80MB splits) was sorted in TBD
